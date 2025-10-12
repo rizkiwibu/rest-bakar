@@ -27,9 +27,9 @@ module.exports = async function (fastify) {
                 },
             },
             servers: [
-                { url: "http://localhost:36877", description: "Server utama" },
-                { url: "https://restapi.botwaaa.web.id", description: "Backup Server" },
-                { url: "https://38eqguz37rn3x.ahost.marscode.site", description: "Backup Server" },
+                { url: "https://restapi.rizk.my.id", description: "Server utama" },
+                { url: "http://localhost:36877", description: "local Server" },
+                { url: "http://localhost:3000", description: "localServer" },
             ],
         },
         apis: ["./src/routes/**/*.js"],
