@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="id" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rizkapis - REST API Indonesia kata nya</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            light: '#3b82f6',
+                            dark: '#2563eb',
+                        },
+                        secondary: {
+                            light: '#10b981',
+                            dark: '#059669',
+                        },
+                        get-method: 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200',
+                        post-method: 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200',
+                        put-method: 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200',
+                        delete-method: 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200',
+                    },
+                    animation: {
+                        'spin-slow': 'spin 3s linear infinite',
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .gradient-text {
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            background-image: linear-gradient(to right, #3b82f6, #10b981);
+        }
+        
+        .dark .gradient-text {
+            background-image: linear-gradient(to right, #60a5fa, #34d399);
+        }
+        
+        .endpoint-method {
+            @apply px-3 py-1 rounded-md text-xs font-bold uppercase;
+        }
+        
+        .loading-spinner {
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        .api-card {
+            transition: all 0.3s ease;
+        }
+        
+        .api-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        
+        .dark .api-card:hover {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.25), 0 4px 6px -2px rgba(0, 0, 0, 0.1);
+        }
+        
+        .nav-link {
+            position: relative;
+        }
+        
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: -2px;
+            left: 0;
+            background-color: #3b82f6;
+            transition: width 0.3s ease;
+        }
+        
+        .nav-link:hover::after {
+            width: 100%;
+        }
+        
+        .dark .nav-link::after {
+            background-color: #60a5fa;
+        }
+        
+        .try-it-out {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+        
+        .try-it-out.active {
+            max-height: 500px;
+        }
+        
+        .response-area {
+            min-height: 100px;
+        }
+        
+        .copy-btn {
+            transition: all 0.2s ease;
+        }
+        
+        .copy-btn:hover {
+            transform: scale(1.05);
+        }
+        
+        .copy-btn.copied {
+            background-color: #10b981 !important;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200 transition-colors duration-300">
+    <!-- Header -->
+    <header class="sticky top-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-2">
+                    <div class="w-10 h-10 rounded-lg bg-primary-light dark:bg-primary-dark flex items-center justify-center">
+                        <i class="fas fa-code text-white text-xl"></i>
+                    </div>
+                    <a href="#" class="text-2xl font-bold">
+                        <span class="gradient-text">Rizkapis</span>
+                    </a>
+                </div>
+                
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="#features" class="nav-link">Fitur</a>
+                    <a href="#endpoints" class="nav-link">Endpoints</a>
+                    <a href="#about" class="nav-link">Tentang</a>
+                    <a href="https://restapi.rizk.my.id/donasi" target="_blank" class="bg-secondary-light dark:bg-secondary-dark text-white px-4 py-2 rounded-lg hover:opacity-90 transition-opacity">
+                        <i class="fas fa-heart mr-2"></i>Donasi
+                    </a>
+                    <button id="theme-toggle" class="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
+                        <i class="fas fa-moon dark:hidden"></i>
+                        <i class="fas fa-sun hidden dark:block"></i>
+                    </button>
+                </div>
+                
+                <button id="mobile-menu-button" class="md:hidden w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Mobile menu -->
+        <div id="mobile-menu" class="hidden md:hidden bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 px-4 py-3">
+            <div class="flex flex-col space-y-3">
+                <a href="#features" class="nav-link py-2">Fitur</a>
+                <a href="#endpoints" class="nav-link py-2">Endpoints</a>
+                <a href="#about" class="nav-link py-2">Tentang</a>
+                <a href="https://restapi.rizk.my.id/donasi" target="_blank" class="bg-secondary-light dark:bg-secondary-dark text-white px-4 py-2 rounded-lg hover:opacity-90 transition-opacity text-center">
+                    <i class="fas fa-heart mr-2"></i>Donasi
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="py-20">
+        <div class="container mx-auto px-4">
+            <div class="flex flex-col md:flex-row items-center">
+                <div class="md:w-1/2 mb-12 md:mb-0">
+                    <h1 class="text-4xl md:text-5xl font-bold mb-6 leading-tight">
+                        REST API Indonesia 
+                        <span class="gradient-text">Terbaik</span>
+                    </h1>
+                    <p class="text-lg text-gray-600 dark:text-gray-300 mb-8">
+                        Rizkapis menyediakan berbagai endpoint API yang siap digunakan untuk pengembangan aplikasi Anda. Mulai dari data agama, quotes, hingga tools praktis.
+                    </p>
+                    <div class="flex flex-wrap gap-4">
+                        <a href="#endpoints" class="bg-primary-light dark:bg-primary-dark text-white px-6 py-3 rounded-lg hover:opacity-90 transition-opacity font-medium">
+                            <i class="fas fa-rocket mr-2"></i>Mulai Sekarang
+                        </a>
+                        <a href="https://restapi.rizk.my.id/docs" target="_blank" class="border border-primary-light dark:border-primary-dark text-primary-light dark:text-primary-dark px-6 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors font-medium">
+                            <i class="fas fa-external-link-alt mr-2"></i>Dokumentasi Lengkap
+                        </a>
+                    </div>
+                </div>
+                <div class="md:w-1/2">
+                    <div class="relative">
+                        <div class="absolute -top-6 -left-6 w-32 h-32 rounded-full bg-blue-200 dark:bg-blue-900 opacity-50 animate-pulse-slow"></div>
+                        <div class="absolute -bottom-6 -right-6 w-32 h-32 rounded-full bg-green-200 dark:bg-green-900 opacity-50 animate-pulse-slow"></div>
+                        <div class="relative bg-white dark:bg-gray-800 rounded-xl shadow-xl p-6 border border-gray-200 dark:border-gray-700 overflow-hidden">
+                            <div class="flex items-center mb-4">
+                                <div class="flex space-x-2">
+                                    <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                                    <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                                    <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                                </div>
+                                <div class="ml-4 text-sm font-mono">GET /api/random-quote</div>
+                            </div>
+                            <pre class="text-sm bg-gray-100 dark:bg-gray-700 p-4 rounded-lg overflow-x-auto"><code>{
+  "status": "success",
+  "data": {
+    "quote": "Kesuksesan adalah hasil dari persiapan, kerja keras, dan belajar dari kegagalan.",
+    "author": "Anonim"
+  }
+}</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="py-20 bg-gray-100 dark:bg-gray-800">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl font-bold mb-4">Mengapa Memilih Rizkapis?</h2>
+                <p class="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+                    Berbagai keunggulan yang membuat Rizkapis menjadi pilihan utama untuk kebutuhan API Anda.
+                </p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="bg-white dark:bg-gray-700 rounded-xl p-6 shadow-md border border-gray-200 dark:border-gray-600 hover:shadow-lg transition-shadow">
+                    <div class="w-14 h-14 rounded-lg bg-blue-100 dark:bg-blue-900 flex items-center justify-center mb-4">
+                        <i class="fas fa-bolt text-blue-600 dark:text-blue-400 text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-3">Cepat & Responsif</h3>
+                    <p class="text-gray-600 dark:text-gray-300">
+                        Server yang dioptimalkan untuk memberikan respon tercepat dengan latency rendah.
+                    </p>
+                </div>
+                
+                <div class="bg-white dark:bg-gray-700 rounded-xl p-6 shadow-md border border-gray-200 dark:border-gray-600 hover:shadow-lg transition-shadow">
+                    <div class="w-14 h-14 rounded-lg bg-green-100 dark:bg-green-900 flex items-center justify-center mb-4">
+                        <i class="fas fa-shield-alt text-green-600 dark:text-green-400 text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-3">Aman & Terpercaya</h3>
+                    <p class="text-gray-600 dark:text-gray-300">
+                        Dilengkapi dengan proteksi keamanan untuk melindungi data dan sistem Anda.
+                    </p>
+                </div>
+                
+                <div class="bg-white dark:bg-gray-700 rounded-xl p-6 shadow-md border border-gray-200 dark:border-gray-600 hover:shadow-lg transition-shadow">
+                    <div class="w-14 h-14 rounded-lg bg-purple-100 dark:bg-purple-900 flex items-center justify-center mb-4">
+                        <i class="fas fa-sync-alt text-purple-600 dark:text-purple-400 text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-3">Update Berkala</h3>
+                    <p class="text-gray-600 dark:text-gray-300">
+                        Endpoint API terus diperbarui dengan fitur-fitur terbaru secara berkala.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- API Endpoints Section -->
+    <section id="endpoints" class="py-20">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl font-bold mb-4">Daftar Endpoint API</h2>
+                <p class="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+                    Berbagai endpoint yang tersedia untuk memenuhi kebutuhan pengembangan aplikasi Anda.
+                </p>
+            </div>
+            
+            <div class="max-w-5xl mx-auto">
+                <div class="mb-8">
+                    <div class="relative">
+                        <input type="text" id="search-endpoint" placeholder="Cari endpoint..." class="w-full px-6 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary-light dark:focus:ring-primary-dark">
+                        <i class="fas fa-search absolute right-6 top-3.5 text-gray-400"></i>
+                    </div>
+                </div>
+                
+                <div id="api-endpoints">
+                    <h3 class="text-2xl font-bold mb-6">Daftar Endpoint</h3>
+                    <div class="space-y-8">
+                        <!-- Endpoint items will be loaded here -->
+                        <div class="text-center py-8" id="loading-endpoints">
+                            <div class="inline-block loading-spinner">
+                                <i class="fas fa-circle-notch text-4xl text-primary-light dark:text-primary-dark"></i>
+                            </div>
+                            <p class="mt-4">Memuat daftar endpoint...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section id="about" class="py-20 bg-gray-100 dark:bg-gray-800">
+        <div class="container mx-auto px-4">
+            <div class="flex flex-col md:flex-row items-center">
+                <div class="md:w-1/2 mb-12 md:mb-0 md:pr-12">
+                    <h2 class="text-3xl font-bold mb-6">Tentang Rizkapis</h2>
+                    <p class="text-gray-600 dark:text-gray-300 mb-6">
+                        Rizkapis adalah layanan REST API yang dikembangkan untuk memudahkan developer dalam membangun aplikasi dengan menyediakan berbagai data dan fungsi yang siap pakai.
+                    </p>
+                    <p class="text-gray-600 dark:text-gray-300 mb-6">
+                        Dengan fokus pada kemudahan penggunaan dan performa tinggi, Rizkapis hadir sebagai solusi untuk berbagai kebutuhan pengembangan aplikasi modern.
+                    </p>
+                    <div class="flex space-x-4">
+                        <a href="https://github.com/rizkiwibu" target="_blank" class="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
+                            <i class="fab fa-github"></i>
+                        </a>
+                        <a href="https://instagram.com/ikykunnnn" target="_blank" class="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
+                            <i class="fab fa-instagram"></i>
+                        </a>
+                        <a href="mailto:admin@rizk.my.id" class="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
+                            <i class="fas fa-envelope"></i>
+                        </a>
+                    </div>
+                </div>
+                <div class="md:w-1/2">
+                    <div class="bg-white dark:bg-gray-700 rounded-xl shadow-md p-8 border border-gray-200 dark:border-gray-600">
+                        <h3 class="text-xl font-semibold mb-4">Dukung Kami</h3>
+                        <p class="text-gray-600 dark:text-gray-300 mb-6">
+                            Rizkapis dikembangkan dan dihosting secara mandiri. Dukungan Anda sangat berarti untuk pengembangan dan pemeliharaan layanan ini.
+                        </p>
+                        <a href="https://restapi.rizk.my.id/donasi" target="_blank" class="inline-block bg-secondary-light dark:bg-secondary-dark text-white px-6 py-3 rounded-lg hover:opacity-90 transition-opacity font-medium">
+                            <i class="fas fa-heart mr-2"></i>Donasi Sekarang
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 py-12">
+        <div class="container mx-auto px-4">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="mb-6 md:mb-0">
+                    <div class="flex items-center space-x-2">
+                        <div class="w-8 h-8 rounded-lg bg-primary-light dark:bg-primary-dark flex items-center justify-center">
+                            <i class="fas fa-code text-white text-sm"></i>
+                        </div>
+                        <span class="text-xl font-bold">Rizkapis</span>
+                    </div>
+                    <p class="text-gray-500 dark:text-gray-400 mt-2 text-sm">
+                        © 2025 Rizkapis. All rights reserved.
+                    </p>
+                </div>
+                <div class="flex space-x-6">
+                    <a href="#features" class="text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white transition-colors">Fitur</a>
+                    <a href="#endpoints" class="text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white transition-colors">Endpoints</a>
+                    <a href="#about" class="text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white transition-colors">Tentang</a>
+                    <a href="https://restapi.rizk.my.id" target="_blank" class="text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white transition-colors">Dokumentasi</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Theme toggle
+        const themeToggle = document.getElementById('theme-toggle');
+        const html = document.documentElement;
+        
+        // Check for saved user preference or use system preference
+        if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            html.classList.add('dark');
+        }
+        
+        themeToggle.addEventListener('click', () => {
+            html.classList.toggle('dark');
+            localStorage.setItem('theme', html.classList.contains('dark') ? 'dark' : 'light');
+        });
+        
+        // Mobile menu toggle
+        const mobileMenuButton = document.getElementById('mobile-menu-button');
+        const mobileMenu = document.getElementById('mobile-menu');
+        
+        mobileMenuButton.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+        
+        // Close mobile menu when clicking on a link
+        document.querySelectorAll('#mobile-menu a').forEach(link => {
+            link.addEventListener('click', () => {
+                mobileMenu.classList.add('hidden');
+            });
+        });
+        
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                
+                const targetId = this.getAttribute('href');
+                const targetElement = document.querySelector(targetId);
+                
+                if (targetElement) {
+                    targetElement.scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                }
+            });
+        });
+        
+        // Load API endpoints from the provided URL
+        document.addEventListener('DOMContentLoaded', function() {
+            fetch('https://restapi.rizk.my.id/docs/json')
+                .then(response => response.json())
+                .then(data => {
+                    const loadingElement = document.getElementById('loading-endpoints');
+                    if (loadingElement) {
+                        loadingElement.remove();
+                    }
+                    
+                    const apiEndpointsContainer = document.querySelector('#api-endpoints .space-y-8');
+                    
+                    // Process the paths from the OpenAPI/Swagger JSON
+                    const paths = data.paths;
+                    for (const [path, methods] of Object.entries(paths)) {
+                        for (const [method, details] of Object.entries(methods)) {
+                            const endpointDiv = document.createElement('div');
+                            endpointDiv.className = 'api-card bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 border border-gray-200 dark:border-gray-700';
+                            
+                            let methodColorClass = '';
+                            switch(method) {
+                                case 'get':
+                                    methodColorClass = 'get-method';
+                                    break;
+                                case 'post':
+                                    methodColorClass = 'post-method';
+                                    break;
+                                case 'put':
+                                    methodColorClass = 'put-method';
+                                    break;
+                                case 'delete':
+                                    methodColorClass = 'delete-method';
+                                    break;
+                                default:
+                                    methodColorClass = 'text-gray-500';
+                            }
+                            
+                            // Generate parameters form if there are parameters
+                            let parametersForm = '';
+                            if (details.parameters) {
+                                parametersForm = details.parameters.map(param => {
+                                    return `
+                                        <div class="mb-4">
+                                            <label class="block text-sm font-medium mb-1">${param.name} ${param.required ? '<span class="text-red-500">*</span>' : ''}</label>
+                                            <input type="${param.schema?.type === 'number' ? 'number' : 'text'}" 
+                                                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700" 
+                                                   placeholder="${param.description || param.name}" 
+                                                   ${param.required ? 'required' : ''}
+                                                   data-param="${param.name}">
+                                        </div>
+                                    `;
+                                }).join('');
+                            }
+                            
+                            endpointDiv.innerHTML = `
+                                <div class="flex items-start justify-between">
+                                    <div>
+                                        <h4 class="text-xl font-semibold mb-2">${details.summary || 'Endpoint'}</h4>
+                                        <div class="flex items-center mb-4">
+                                            <span class="endpoint-method ${methodColorClass} mr-3">${method.toUpperCase()}</span>
+                                            <code class="text-sm bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">${path}</code>
+                                        </div>
+                                        <p class="text-gray-600 dark:text-gray-300 mb-4">${details.description || 'Tidak ada deskripsi tersedia.'}</p>
+                                    </div>
+                                </div>
+                                ${details.parameters ? `
+                                <div class="mb-4">
+                                    <h5 class="font-medium mb-2">Parameter:</h5>
+                                    <div class="bg-gray-100 dark:bg-gray-700 p-3 rounded-lg">
+                                        <table class="w-full text-sm">
+                                            <thead>
+                                                <tr class="text-left border-b border-gray-300 dark:border-gray-600">
+                                                    <th class="pb-2">Nama</th>
+                                                    <th class="pb-2">Tipe</th>
+                                                    <th class="pb-2">Deskripsi</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                ${details.parameters.map(param => `
+                                                    <tr class="border-b border-gray-200 dark:border-gray-600">
+                                                        <td class="py-2">${param.name} ${param.required ? '<span class="text-red-500">*</span>' : ''}</td>
+                                                        <td class="py-2">${param.schema?.type || param.in}</td>
+                                                        <td class="py-2">${param.description || '-'}</td>
+                                                    </tr>
+                                                `).join('')}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                                ` : ''}
+                                <div>
+                                    <h5 class="font-medium mb-2">Contoh Response:</h5>
+                                    <div class="bg-gray-100 dark:bg-gray-700 p-3 rounded-lg overflow-x-auto">
+                                        <pre class="text-sm">${JSON.stringify(details.responses?.['200']?.examples?.['application/json'] || {'message': 'Response contoh tidak tersedia'}, null, 2)}</pre>
+                                    </div>
+                                </div>
+                                
+                                <!-- Try it out section -->
+                                <div class="mt-6">
+                                    <button class="try-it-out-btn bg-primary-light dark:bg-primary-dark text-white px-4 py-2 rounded-md hover:opacity-90 transition-opacity">
+                                        <i class="fas fa-play mr-2"></i>Coba Sekarang
+                                    </button>
+                                    
+                                    <div class="try-it-out mt-4 bg-gray-100 dark:bg-gray-700 rounded-lg p-4">
+                                        ${parametersForm ? `
+                                        <div class="mb-4">
+                                            <h5 class="font-medium mb-2">Masukkan Parameter:</h5>
+                                            <form class="parameters-form">
+                                                ${parametersForm}
+                                                <button type="submit" class="bg-secondary-light dark:bg-secondary-dark text-white px-4 py-2 rounded-md hover:opacity-90 transition-opacity mt-2">
+                                                    <i class="fas fa-paper-plane mr-2"></i>Kirim Request
+                                                </button>
+                                            </form>
+                                        </div>
+                                        ` : ''}
+                                        
+                                        <div class="response-area bg-gray-200 dark:bg-gray-800 rounded-lg p-4 mt-4">
+                                            <div class="flex justify-between items-center mb-2">
+                                                <h5 class="font-medium">Response:</h5>
+                                                <button class="copy-btn bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-gray-200 px-2 py-1 rounded text-sm">
+                                                    <i class="fas fa-copy mr-1"></i>Salin
+                                                </button>
+                                            </div>
+                                           <pre class="response-content text-sm bg-white dark:bg-gray-900 p-3 rounded overflow-x-auto overflow-y-auto max-h-96">Klik "Kirim Request" untuk melihat response</pre>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                            
+                            apiEndpointsContainer.appendChild(endpointDiv);
+                            
+                            // Add event listeners for the try it out functionality
+                            const tryItOutBtn = endpointDiv.querySelector('.try-it-out-btn');
+                            const tryItOutSection = endpointDiv.querySelector('.try-it-out');
+                            
+                            tryItOutBtn.addEventListener('click', () => {
+                                tryItOutSection.classList.toggle('active');
+                            });
+                            
+                            // Handle form submission
+                            const form = endpointDiv.querySelector('.parameters-form');
+                            if (form) {
+                                form.addEventListener('submit', function(e) {
+                                    e.preventDefault();
+                                    
+                                    const responseContent = endpointDiv.querySelector('.response-content');
+                                    const copyBtn = endpointDiv.querySelector('.copy-btn');
+                                    
+                                    // Build URL with parameters
+                                    let apiUrl = `https://restapi.rizk.my.id${path}`;
+                                    const inputs = form.querySelectorAll('input');
+                                    const params = {};
+                                    
+                                    inputs.forEach(input => {
+                                        if (input.value) {
+                                            params[input.dataset.param] = input.value;
+                                        }
+                                    });
+                                    
+                                    // For GET requests, add parameters to URL
+                                    if (method === 'get') {
+                                        const queryParams = new URLSearchParams(params);
+                                        apiUrl += `?${queryParams.toString()}`;
+                                    }
+                                    
+                                    // Show loading state
+                                    responseContent.textContent = 'Mengirim request...';
+                                    
+                                    // Make the API request
+                                    const requestOptions = {
+                                        method: method.toUpperCase(),
+                                        headers: {
+                                            'Content-Type': 'application/json'
+                                        }
+                                    };
+                                    
+                                    // For non-GET requests, add body
+                                    if (method !== 'get') {
+                                        requestOptions.body = JSON.stringify(params);
+                                    }
+                                    
+                                    fetch(apiUrl, requestOptions)
+                                        .then(response => response.json())
+                                        .then(data => {
+                                            responseContent.textContent = JSON.stringify(data, null, 2);
+                                            copyBtn.classList.remove('copied');
+                                            copyBtn.innerHTML = '<i class="fas fa-copy mr-1"></i>Salin';
+                                        })
+                                        .catch(error => {
+                                            responseContent.textContent = `Error: ${error.message}`;
+                                        });
+                                });
+                            }
+                            
+                            // Add copy functionality
+                            const copyBtn = endpointDiv.querySelector('.copy-btn');
+                            if (copyBtn) {
+                                copyBtn.addEventListener('click', function() {
+                                    const responseContent = endpointDiv.querySelector('.response-content');
+                                    navigator.clipboard.writeText(responseContent.textContent)
+                                        .then(() => {
+                                            copyBtn.classList.add('copied');
+                                            copyBtn.innerHTML = '<i class="fas fa-check mr-1"></i>Tersalin!';
+                                            setTimeout(() => {
+                                                copyBtn.classList.remove('copied');
+                                                copyBtn.innerHTML = '<i class="fas fa-copy mr-1"></i>Salin';
+                                            }, 2000);
+                                        });
+                                });
+                            }
+                        }
+                    }
+                    
+                    // Add search functionality
+                    const searchInput = document.getElementById('search-endpoint');
+                    if (searchInput) {
+                        searchInput.addEventListener('input', function() {
+                            const searchTerm = this.value.toLowerCase();
+                            const apiCards = document.querySelectorAll('.api-card');
+                            
+                            apiCards.forEach(card => {
+                                const cardText = card.textContent.toLowerCase();
+                                if (cardText.includes(searchTerm)) {
+                                    card.style.display = 'block';
+                                } else {
+                                    card.style.display = 'none';
+                                }
+                            });
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading API endpoints:', error);
+                    const loadingElement = document.getElementById('loading-endpoints');
+                    if (loadingElement) {
+                        loadingElement.innerHTML = `
+                            <div class="text-red-500">
+                                <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
+                                <p>Gagal memuat daftar endpoint. Silakan coba lagi nanti atau kunjungi <a href="https://restapi.rizk.my.id" target="_blank" class="underline">dokumentasi lengkap</a>.</p>
+                            </div>
+                        `;
+                    }
+                });
+        });
+    </script>
+</html>

@@ -1,0 +1,162 @@
+const swagger = require("@fastify/swagger");
+const { SwaggerTheme, SwaggerThemeNameEnum } = require("swagger-themes");
+const swaggerUi = require("@fastify/swagger-ui");
+const swaggerJsDoc = require("swagger-jsdoc");
+const Config = require("../config");
+const fs = require("fs");
+
+module.exports = async function (fastify) {
+    const theme = new SwaggerTheme();
+    const content = theme.getBuffer(SwaggerThemeNameEnum.Material);
+
+    const faviconPath = "src/public/favicon.ico";
+    const faviconBuffer = fs.readFileSync(faviconPath);
+    const faviconBase64 = faviconBuffer.toString("base64");
+
+    const swaggerOptions = {
+        definition: {
+            openapi: "3.0.0",
+            info: {
+                title: Config.info.title,
+                description: "REST API untuk berbagai fitur dengan tampilan modern dan interaktif.",
+                version: "1.0.0",
+                contact: {
+                    name: Config.creator,
+                    email: Config.info.email,
+                    url: Config.web,
+                },
+            },
+            servers: [
+                { url: "https://restapi.rizk.my.id", description: "Server utama" },
+                { url: "https://restapi.botwaaa.web.id", description: "Backup Server" },
+                { url: "https://38eqguz37rn3x.ahost.marscode.site", description: "Backup Server" },
+            ],
+        },
+        apis: ["./src/routes/**/*.js"],
+    };
+
+    const swaggerDocs = swaggerJsDoc(swaggerOptions);
+
+    fastify.register(swagger, {
+        openapi: swaggerDocs,
+        exposeRoute: true,
+    });
+
+    fastify.register(swaggerUi, {
+        routePrefix: "/docs",
+        swagger: swaggerDocs,
+        exposeRoute: true,
+        uiConfig: {
+            layout: "BaseLayout",
+        },
+        theme: {
+            title: "Rizkiirfan RestAPIs",
+            css: [{ filename: "theme.css", content }],
+            favicon: [
+                {
+                    filename: "favicon.ico",
+                    rel: "icon",
+                    sizes: "16x16",
+                    type: "image/x-icon",
+                    content: Buffer.from(faviconBase64, "base64"),
+                },
+            ],
+            js: [
+                {
+                    filename: "custom-ui.js",
+                    content: `
+document.addEventListener("DOMContentLoaded", function() {
+    // Animasi Loading
+    const loadingDiv = document.createElement("div");
+    loadingDiv.id = "loading-screen";
+    Object.assign(loadingDiv.style, {
+        position: "fixed",
+        top: "0", left: "0", width: "100%", height: "100%",
+        background: "white",
+        display: "flex", justifyContent: "center", alignItems: "center",
+        zIndex: "9999"
+    });
+    const loadingText = document.createElement("h2");
+    loadingText.innerText = "Loading API Docs...";
+    loadingDiv.appendChild(loadingText);
+    document.body.appendChild(loadingDiv);
+
+    setTimeout(() => loadingDiv.style.display = "none", 2000);
+
+    // Customer Service Button
+    const csBtn = document.createElement("button");
+    csBtn.innerText = "CUSTOMER SERVICE";
+    Object.assign(csBtn.style, {
+        position: "fixed", bottom: "80px", right: "20px",
+        background: "#007bff", color: "white", border: "none",
+        padding: "15px 30px", fontSize: "18px", cursor: "pointer",
+        borderRadius: "10px", boxShadow: "0px 4px 6px rgba(0,0,0,0.2)"
+    });
+
+    csBtn.onclick = function() {
+        if (document.getElementById("cs-popup")) return;
+        const popup = document.createElement("div");
+        popup.id = "cs-popup";
+        Object.assign(popup.style, {
+            position: "fixed", bottom: "150px", right: "20px",
+            background: "white", padding: "15px", borderRadius: "10px",
+            boxShadow: "0px 4px 6px rgba(0,0,0,0.2)", zIndex: "9999", textAlign: "center",
+        });
+
+        const waBtn = document.createElement("button");
+        waBtn.innerText = " WhatsApp";
+        Object.assign(waBtn.style, { display: "block", width: "100%", padding: "10px", background: "#25D366", color: "white", border: "none", borderRadius: "5px", cursor: "pointer" });
+        waBtn.onclick = () => window.open("https://wa.me/6285878836361", "_blank");
+
+        const igBtn = document.createElement("button");
+        igBtn.innerText = "Instagram";
+        Object.assign(igBtn.style, { display: "block", width: "100%", padding: "10px", background: "#E4405F", color: "white", border: "none", borderRadius: "5px", cursor: "pointer" });
+        igBtn.onclick = () => window.open("https://www.instagram.com/ikykunnnn", "_blank");
+
+        const closeBtn = document.createElement("button");
+        closeBtn.innerText = "Close";
+        Object.assign(closeBtn.style, { display: "block", width: "100%", padding: "10px", background: "#dc3545", color: "white", border: "none", borderRadius: "5px", cursor: "pointer", marginTop: "10px" });
+        closeBtn.onclick = () => popup.remove();
+
+        popup.append(waBtn, igBtn, closeBtn);
+        document.body.appendChild(popup);
+
+        setTimeout(() => {
+            document.addEventListener("click", function closePopup(event) {
+                if (!popup.contains(event.target) && event.target !== csBtn) {
+                    popup.remove();
+                    document.removeEventListener("click", closePopup);
+                }
+            });
+        }, 10);
+    };
+    document.body.appendChild(csBtn);
+
+    // Donasi Button
+    const donateBtn = document.createElement("button");
+    donateBtn.innerText = " DONASI";
+    Object.assign(donateBtn.style, {
+        position: "fixed", bottom: "20px", right: "20px",
+        background: "#ff9800", color: "white", border: "none",
+        padding: "15px 30px", fontSize: "20px", cursor: "pointer",
+        borderRadius: "10px", boxShadow: "0px 4px 6px rgba(0,0,0,0.2)"
+    });
+    donateBtn.onclick = () => window.open("/donasi", "_blank");
+    document.body.appendChild(donateBtn);
+
+    // Musik Latar
+    const audio = new Audio("https://boxradio-edge-00.streamafrica.net/jpopchill");
+    audio.loop = true;
+
+    const playAudio = () => {
+        audio.play().catch(err => console.log("Autoplay diblokir:", err));
+    };
+
+    document.body.addEventListener("click", playAudio, { once: true });
+});
+                    `,
+                },
+            ],
+        },
+    });
+};

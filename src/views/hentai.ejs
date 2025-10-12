@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>hentaivideo — Demo</title>
+<link rel="icon" href="data:;base64,iVBORw0KGgo=">
+<style>
+  :root{
+    --bg:#0b1220; --card:#0f1724; --muted:#98a2b3; --accent:#7c3aed; --glass: rgba(255,255,255,0.03);
+    --text:#e6eef8; --radius:12px;
+  }
+  [data-theme="light"]{
+    --bg:#f6f8fb; --card:#ffffff; --muted:#596273; --accent:#5b21b6; --glass: rgba(0,0,0,0.04);
+    --text:#0b1220;
+  }
+  html,body{height:100%;margin:0;font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial;background:linear-gradient(180deg,var(--bg),#041226);color:var(--text);}
+  .app{max-width:1100px;margin:28px auto;padding:20px;box-sizing:border-box;}
+  header{display:flex;align-items:center;gap:14px;margin-bottom:16px}
+  .logo{width:56px;height:56px;border-radius:12px;background:linear-gradient(135deg,var(--accent),#06b6d4);display:flex;align-items:center;justify-content:center;font-weight:700;color:white;font-size:18px;box-shadow:0 8px 26px rgba(2,6,23,0.5)}
+  h1{margin:0;font-size:20px}
+  p.lead{margin:0;color:var(--muted);font-size:13px}
+  .controls{margin-left:auto;display:flex;gap:8px;align-items:center}
+  .card{background:var(--card);border-radius:12px;padding:14px;box-shadow:0 8px 28px rgba(2,6,23,0.6)}
+  .searchRow{display:flex;gap:8px;margin:16px 0}
+  input[type="search"]{flex:1;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);background:var(--glass);color:var(--text);outline:none}
+  button{cursor:pointer;padding:9px 12px;border-radius:10px;border:0;background:var(--accent);color:white;font-weight:600}
+  button.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--text)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+  .item{background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent); border-radius:12px; overflow:hidden; display:flex;flex-direction:column}
+  .thumb{position:relative;padding-top:56%;background:#081220}
+  .meta{padding:12px;flex:1;display:flex;flex-direction:column;gap:8px}
+  .title{font-size:14px;font-weight:700;line-height:1.2;margin:0}
+  .sub{font-size:12px;color:var(--muted);margin:0}
+  .rowBottom{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:auto}
+  .pill{font-size:12px;padding:6px 8px;border-radius:999px;border:1px solid rgba(255,255,255,0.04);background:rgba(255,255,255,0.02)}
+  .controlsSmall{display:flex;gap:8px}
+  .btnLink{background:transparent;border:0;color:var(--accent);cursor:pointer;font-weight:700;padding:6px 8px;border-radius:8px}
+  footer{margin-top:18px;color:var(--muted);font-size:13px;text-align:center}
+  /* modal */
+  .modalBack{position:fixed;inset:0;background:rgba(2,6,23,0.7);display:flex;align-items:center;justify-content:center;padding:18px;z-index:999;opacity:0;pointer-events:none;transition:opacity .18s}
+  .modalBack.show{opacity:1;pointer-events:auto}
+  .modal{max-width:960px;width:100%;background:var(--card);border-radius:12px;padding:12px;box-shadow:0 20px 60px rgba(2,6,23,0.7)}
+  .modalHeader{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+  .closeBtn{margin-left:auto;background:transparent;border:0;color:var(--muted);cursor:pointer;font-size:16px}
+  video{width:100%;height:auto;border-radius:10px;background:black;display:block}
+  .infoBlock{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px}
+  .small{font-size:13px;color:var(--muted)}
+  .pagination{display:flex;gap:8px;justify-content:center;margin-top:16px}
+  .empty{padding:24px;border-radius:12px;text-align:center;color:var(--muted);background:var(--card)}
+  @media (max-width:560px){.logo{width:44px;height:44px}.meta{padding:10px}}
+</style>
+</head>
+<body data-theme="dark">
+  <div class="app">
+    <header>
+      <div class="logo">AC</div>
+      <div>
+        <h1>hentaivideo</h1>
+        <p class="lead">Mengambil data dari REST API lokal kamu — bahasa Indonesia.</p>
+      </div>
+      <div class="controls">
+        <label style="display:flex;align-items:center;gap:8px">
+          <input id="themeToggle" type="checkbox" /> <span style="color:var(--muted);font-size:13px">Light</span>
+        </label>
+      </div>
+    </header>
+
+    <div class="card">
+      <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+        <div style="min-width:180px">
+          <strong>Endpoint:</strong>
+          <div style="font-size:13px;color:var(--muted);margin-top:4px" id="apiEndpoint">http://localhost:36877/sfwnsfw/hentaivideo?apikey=free</div>
+        </div>
+        <div style="margin-left:auto;color:var(--muted);font-size:13px">
+          <span id="totalCount">— total —</span>
+        </div>
+      </div>
+
+      <div class="searchRow">
+        <input id="q" type="search" placeholder="Cari judul / kategori..." />
+        <button id="btnSearch">Cari</button>
+        <button id="btnReload" class="ghost">Reload</button>
+      </div>
+
+      <div id="contentArea">
+        <div id="grid" class="grid" aria-live="polite"></div>
+        <div id="empty" class="empty" style="display:none">Tidak ada clip yang cocok.</div>
+      </div>
+
+      <div class="pagination" id="pagination">
+        <button id="prev" class="ghost">Prev</button>
+        <div id="pageInfo" style="align-self:center;color:var(--muted)"></div>
+        <button id="next" class="ghost">Next</button>
+      </div>
+    </div>
+
+    <footer>
+      Dibuat otomatis — pastikan API mengizinkan CORS jika menggunakan browser.
+    </footer>
+  </div>
+
+  <!-- Modal pemutar -->
+  <div id="modalBack" class="modalBack" role="dialog" aria-modal="true" style="display:none">
+    <div class="modal">
+      <div class="modalHeader">
+        <strong id="modalTitle">Judul</strong>
+        <button class="closeBtn" id="closeModal">✕</button>
+      </div>
+      <div>
+        <video id="player" controls playsinline controlsList="nodownload"></video>
+        <div class="infoBlock">
+          <div class="small" id="modalCategory"></div>
+          <div class="small" id="modalViews"></div>
+          <div class="small" id="modalShares"></div>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
+          <a id="downloadBtn" class="btnLink" href="#" download>⤓ Download</a>
+          <a id="openLink" class="btnLink" href="#" target="_blank" rel="noopener">🔗 Buka Halaman</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+/*
+  Single-file frontend untuk API:
+  http://localhost:36877/sfwnsfw/hentaivideo?apikey=free
+
+  Fitur:
+  - Fetch data
+  - Search client-side (karena API sample mengembalikan semua data)
+  - Pagination client-side
+  - Modal video player + download link
+  - Dark / light toggle
+*/
+
+const API = document.getElementById('apiEndpoint').textContent.trim();
+const grid = document.getElementById('grid');
+const empty = document.getElementById('empty');
+const totalCountEl = document.getElementById('totalCount');
+const qInput = document.getElementById('q');
+const btnSearch = document.getElementById('btnSearch');
+const btnReload = document.getElementById('btnReload');
+const prevBtn = document.getElementById('prev');
+const nextBtn = document.getElementById('next');
+const pageInfo = document.getElementById('pageInfo');
+
+const modalBack = document.getElementById('modalBack');
+const modalTitle = document.getElementById('modalTitle');
+const modalCategory = document.getElementById('modalCategory');
+const modalViews = document.getElementById('modalViews');
+const modalShares = document.getElementById('modalShares');
+const player = document.getElementById('player');
+const downloadBtn = document.getElementById('downloadBtn');
+const openLink = document.getElementById('openLink');
+const closeModalBtn = document.getElementById('closeModal');
+
+let items = [];       // semua data dari API
+let filtered = [];    // hasil filter
+let page = 1;
+const perPage = 6;
+
+async function fetchData(){
+  grid.innerHTML = '<div style="grid-column:1/-1;padding:18px">Memuat...</div>';
+  try{
+    const res = await fetch(API);
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    const json = await res.json();
+    if(json && Array.isArray(json.data)){
+      items = json.data;
+      totalCountEl.textContent = (json.total !== undefined) ? json.total + ' items' : items.length + ' items';
+      applyFilter();
+    } else {
+      // jika API mengembalikan objek berbeda, coba ambil root array
+      console.warn('Format json tidak seperti contoh. Memeriksa root...')
+      items = Array.isArray(json) ? json : [];
+      totalCountEl.textContent = items.length + ' items';
+      applyFilter();
+    }
+  }catch(err){
+    console.error(err);
+    grid.innerHTML = '<div style="grid-column:1/-1;padding:18px;color:var(--muted)">Gagal memuat data. Cek API / CORS di console.</div>';
+    totalCountEl.textContent = 'error';
+  }
+}
+
+function applyFilter(){
+  const q = qInput.value.trim().toLowerCase();
+  if(q === '') filtered = items.slice();
+  else filtered = items.filter(it => {
+    const t = (it.title||'').toLowerCase();
+    const c = (it.category||'').toLowerCase();
+    return t.includes(q) || c.includes(q);
+  });
+  page = 1;
+  renderPage();
+}
+
+function renderPage(){
+  grid.innerHTML = '';
+  if(!filtered.length){
+    empty.style.display = 'block';
+    pageInfo.textContent = '';
+    return;
+  } else {
+    empty.style.display = 'none';
+  }
+  const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
+  if(page < 1) page = 1;
+  if(page > totalPages) page = totalPages;
+  const start = (page-1)*perPage;
+  const pageItems = filtered.slice(start, start+perPage);
+
+  pageItems.forEach(it => {
+    const div = document.createElement('div');
+    div.className = 'item';
+    // gunakan video_1 sebagai thumbnail preview jika tersedia (poster). Jika tidak, gunakan placeholder.
+    const thumbUrl = (it.video_1) ? it.video_1 : '';
+    div.innerHTML = `
+      <div class="thumb" data-video="${escapeHtml(it.video_1||'')}" style="background-image:${thumbUrl ? 'url('+thumbUrl+')' : 'none'}; background-size:cover; background-position:center">
+        <!-- overlay play -->
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">
+          <div style="width:64px;height:64px;border-radius:999px;background:linear-gradient(180deg,rgba(0,0,0,0.45),rgba(0,0,0,0.6));display:flex;align-items:center;justify-content:center;font-weight:700;color:white">▶</div>
+        </div>
+      </div>
+      <div class="meta">
+        <h3 class="title">${escapeHtml(it.title||'No title')}</h3>
+        <p class="sub">${escapeHtml(it.category||'—')}</p>
+        <div class="rowBottom">
+          <div class="pill">${escapeHtml(it.type||'—')}</div>
+          <div class="controlsSmall">
+            <button class="btnOpen btnLink" data-link="${escapeHtml(it.link||'#')}" data-video="${escapeHtml(it.video_1||it.video_2||'')}" data-title="${escapeHtml(it.title||'')}" data-category="${escapeHtml(it.category||'')}" data-views="${escapeHtml(it.views_count||'')}" data-shares="${escapeHtml(it.share_count||'')}">Buka</button>
+            <button class="btnPlay btnLink" data-video="${escapeHtml(it.video_1||it.video_2||'')}" data-title="${escapeHtml(it.title||'')}" data-category="${escapeHtml(it.category||'')}" data-views="${escapeHtml(it.views_count||'')}" data-shares="${escapeHtml(it.share_count||'')}">Putar</button>
+            <a class="btnLink" href="${escapeHtml(it.video_1||it.video_2||'#')}" download>⤓</a>
+          </div>
+        </div>
+      </div>
+    `;
+    grid.appendChild(div);
+  });
+
+  pageInfo.textContent = `Halaman ${page} / ${totalPages}`;
+  prevBtn.disabled = page <= 1;
+  nextBtn.disabled = page >= totalPages;
+}
+
+// helper escape untuk mencegah XSS dari data API
+function escapeHtml(s){
+  if(!s) return '';
+  return String(s).replace(/[&<>"']/g, function(m){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m];
+  });
+}
+
+// event listeners
+btnSearch.addEventListener('click', applyFilter);
+qInput.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') applyFilter(); });
+btnReload.addEventListener('click', fetchData);
+prevBtn.addEventListener('click', ()=>{ page = Math.max(1, page-1); renderPage(); });
+nextBtn.addEventListener('click', ()=>{ page = page+1; renderPage(); });
+
+grid.addEventListener('click', (e) => {
+  const play = e.target.closest('.btnPlay');
+  const open = e.target.closest('.btnOpen');
+  if(play){
+    const v = play.dataset.video;
+    const title = play.dataset.title || '';
+    const category = play.dataset.category || '';
+    const views = play.dataset.views || '';
+    const shares = play.dataset.shares || '';
+    openPlayer(v, title, category, views, shares);
+    return;
+  }
+  if(open){
+    const link = open.dataset.link || '#';
+    window.open(link, '_blank');
+    return;
+  }
+});
+
+// modal controls
+function openPlayer(videoUrl, title, category, views, shares){
+  if(!videoUrl){
+    alert('URL video tidak tersedia untuk clip ini.');
+    return;
+  }
+  modalTitle.textContent = title || 'Video';
+  modalCategory.textContent = category ? 'Kategori: ' + category : '';
+  modalViews.textContent = views ? 'Views: ' + views : '';
+  modalShares.textContent = shares ? 'Shares: ' + shares : '';
+  player.src = videoUrl;
+  player.poster = ''; // jika ingin pakai poster, letakkan url di sini
+  downloadBtn.href = videoUrl;
+  downloadBtn.setAttribute('download', sanitizeFilename(title) || 'clip.mp4');
+  openLink.href = '#';
+  // try to open original page if available by finding item
+  const found = items.find(it => it.video_1 === videoUrl || it.video_2 === videoUrl);
+  if(found && found.link) openLink.href = found.link;
+  modalBack.style.display = 'flex';
+  setTimeout(()=> modalBack.classList.add('show'), 10);
+  player.play().catch(()=>{/* autoplay mungkin diblokir */});
+}
+function closeModal(){
+  modalBack.classList.remove('show');
+  setTimeout(()=> { modalBack.style.display = 'none'; player.pause(); player.src = ''; }, 200);
+}
+closeModalBtn.addEventListener('click', closeModal);
+modalBack.addEventListener('click', (e) => {
+  if(e.target === modalBack) closeModal();
+});
+
+// theme toggle
+const themeToggle = document.getElementById('themeToggle');
+themeToggle.addEventListener('change', ()=>{
+  document.body.setAttribute('data-theme', themeToggle.checked ? 'light' : 'dark');
+});
+// simpan preferensi di localStorage
+if(localStorage.getItem('ac_theme') === 'light'){ themeToggle.checked = true; document.body.setAttribute('data-theme','light'); }
+themeToggle.addEventListener('change', ()=> localStorage.setItem('ac_theme', themeToggle.checked ? 'light' : 'dark'));
+
+// sanitize filename sederhana
+function sanitizeFilename(name){
+  if(!name) return '';
+  return name.replace(/[\/\\?%*:|"<>]/g, '').slice(0,120) + '.mp4';
+}
+
+// initial load
+fetchData();
+</script>
+</body>
+</html>

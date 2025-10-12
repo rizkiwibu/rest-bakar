@@ -1,0 +1,14 @@
+{
+  "premium": {
+    "limit": 4999
+  },
+  "vip": {
+    "limit": 10000
+  },
+  "rizkibaik": {
+    "limit": 500
+  },
+  "free": {
+    "limit": 22
+  }
+}
